@@ -22,5 +22,7 @@ FROM nginx:1.21.6-alpine
 # Copy the build output to replace the default nginx contents.
 COPY --from=build-stage /app/build /usr/share/nginx/html
 
+Copy default.conf /etc/nginx/conf.d/default.conf
+
 # Tell Docker about the executable to run (nginx in the foreground)
 CMD ["nginx", "-g", "daemon off;"]
