@@ -1,18 +1,38 @@
-name: Docker Image CI
+name: Docker Image CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Google Container Registry
+        run: echo "${{ secrets.GCR_PASSWORD }}" | docker login -u _json_key --password-stdin https://europe-west9-docker.pkg.dev
+
+      - name: Build Docker image
+        run: docker build -t europe-west9-docker.pkg.dev/pokedevops/student-lyza/pokemon .
+
+      - name: Push Docker image to Google Container Registry
+        run: docker push europe-west9-docker.pkg.dev/pokedevops/student-lyza/pokemon
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: pokedevops
+          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+
+      - name: Deploy to Cloud Run
+        run: gcloud run deploy service-student-lyza-dev --image=europe-west9-docker.pkg.dev/pokedevops/student-lyza/pokemon --region=europe-west9 --platform=managed --quiet
