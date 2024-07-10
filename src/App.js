@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import NameForm from "./components/NameForm";
 import PokemonDisplay from "./components/PokemonDisplay";
+import VersionDisplay from "./components/versionDisplay";
 import "./App.css";
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <h1>Quel Pokémon es-tu?</h1>
       <NameForm onSubmit={setName} />
       {name && <PokemonDisplay name={name} />}
+      <VersionDisplay />
     </div>
   );
 }
