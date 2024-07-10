@@ -9,8 +9,8 @@ env:
   PROJECT_ID: pokedevops
   APP_NAME: pokemon
   REGION: europe-west9
-  REGISTRY: student-darko
-  CLOUDRUN_SERVICE_DEV: service-student-darko-dev
+  REGISTRY: student-lyza
+  CLOUDRUN_SERVICE_DEV: service-student-lyza-dev
 
 jobs:
   docker-build-push:
