@@ -1,54 +1,48 @@
-name: docker tag and push to preprod
+name: deploy app to environment
 on:
-  push:
-    tags:
-    - "*"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        default: prod
+        required: true 
+        options:
+          - preprod
+          - prod
+      version:
+        description: 'App version'
+        required: true
 env:
   PROJECT_ID: pokedevops
   APP_NAME: pokemon
   REGION: europe-west9
-  REGISTRY: student-lyza
-  CLOUDRUN_SERVICE: service-student-lyza-preprod
-
+  REGISTRY: student-darko
+  CLOUDRUN_SERVICE_PREFIX: service-student-darko
 jobs:
-  docker-tag-push:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: export short sha env
-        run: echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
       - name: export registry domain
         run: echo "REGISTRY_DOMAIN=${REGION}-docker.pkg.dev" >> $GITHUB_ENV
 
       - name: export image name env
-        run: echo "IMAGE_NAME=${REGISTRY_DOMAIN}/${PROJECT_ID}/${REGISTRY}/${APP_NAME}" >> $GITHUB_ENV
-
-      - name: export tag name
-        run: echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v4
+        run: echo "IMAGE_NAME=${REGISTRY_DOMAIN}/${PROJECT_ID}/${REGISTRY}/${APP_NAME}:${{ github.event.inputs.version }}" >> $GITHUB_ENV
 
       - name: "gcloud auth"
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.SERVICE_ACCOUNT_KEY }}'
+          credentials_json: '${{ secrets.POKEMON_SECRET }}'
 
       - name: gcloud configure docker 
         run: gcloud --quiet auth configure-docker ${REGION}-docker.pkg.dev
 
-      - name: docker pull 
-        run: docker pull ${IMAGE_NAME}:${GITHUB_SHA_SHORT}
-      
-      - name: docker tag 
-        run: docker tag ${IMAGE_NAME}:${GITHUB_SHA_SHORT} ${IMAGE_NAME}:${TAG_NAME}
-
-      - name: docker push 
-        run: docker push ${IMAGE_NAME}:${TAG_NAME}
+      - name: check if image exists
+        run: docker pull ${IMAGE_NAME}
 
       - name: gcloud run deploy
         run: |
-          gcloud run deploy ${CLOUDRUN_SERVICE} \
-          --image=${IMAGE_NAME}:${TAG_NAME} \
+          gcloud run deploy ${CLOUDRUN_SERVICE_PREFIX}-"${{ github.event.inputs.environment }}" \
+          --image=${IMAGE_NAME} \
           --project=${PROJECT_ID} \
           --region=${REGION} \
-          --set-env-vars=VERSION=${TAG_NAME}
+          --set-env-vars=VERSION=${{ github.event.inputs.version }}

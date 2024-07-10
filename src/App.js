@@ -1,18 +1,19 @@
+
 import React, { useState } from "react";
 import NameForm from "./components/NameForm";
 import PokemonDisplay from "./components/PokemonDisplay";
-import VersionDisplay from "./components/versionDisplay";
 import "./App.css";
+import Footer from "./components/versionDisplay";
 
 function App() {
   const [name, setName] = useState("");
 
   return (
     <div className="App">
-      <h1>Quel Pokémon es-tu?</h1>
+      <h1>Quel Pokémon es-tu??</h1>
       <NameForm onSubmit={setName} />
       {name && <PokemonDisplay name={name} />}
-      <VersionDisplay />
+      <Footer />
     </div>
   );
 }

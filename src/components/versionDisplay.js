@@ -1,13 +1,8 @@
+
 import React from "react";
-import packageJson from "../../package.json";
 
-const VersionDisplay = () => {
-  return (
-    <div className="version-display">
-      Version: {packageJson.version}
-    </div>
-  );
-};
+function Footer() {
+  return <footer>Version: {process.env.REACT_APP_VERSION}</footer>;
+}
 
-
-export default VersionDisplay;
+export default Footer;
