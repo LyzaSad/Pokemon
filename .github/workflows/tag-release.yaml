@@ -13,11 +13,12 @@ on:
         description: 'App version'
         required: true
 env:
+
   PROJECT_ID: pokedevops
   APP_NAME: pokemon
   REGION: europe-west9
-  REGISTRY: student-darko
-  CLOUDRUN_SERVICE_PREFIX: service-student-darko
+  REGISTRY: student-lyza
+  CLOUDRUN_SERVICE_PREFIX: service-student-lyza
 jobs:
   deploy:
     runs-on: ubuntu-latest
