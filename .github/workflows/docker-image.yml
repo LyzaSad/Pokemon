@@ -83,3 +83,19 @@ jobs:
         env:
           GCP_PROJECT: pokedevops
           GCP_REGION: europe-west9
+
+  manual-deploy-to-prod:
+    needs: tag-and-deploy
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Input tag name
+        id: tag_input
+        run: echo "::set-output name=tag_name::${{ github.event.inputs.tag }}"
+
+      - name: Deploy to Google Cloud Run Production
+        run: |
+          gcloud run deploy service-student-lyza-prod --image=europe-west9-docker.pkg.dev/pokedevops/student-lyza/pokemon:${{ steps.tag_input.outputs.tag_name }} --project pokedevops --region europe-west9 --allow-unauthenticated
+        env:
+          GCP_PROJECT: pokedevops
+          GCP_REGION: europe-west9
