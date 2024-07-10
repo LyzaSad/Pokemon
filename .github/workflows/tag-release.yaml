@@ -5,10 +5,10 @@ on:
     - "*"
 env:
   PROJECT_ID: pokedevops
-  APP_NAME: quelpoke
+  APP_NAME: pokemon
   REGION: europe-west9
-  REGISTRY: student-yann
-  CLOUDRUN_SERVICE: service-student-yann-preprod
+  REGISTRY: student-lyza
+  CLOUDRUN_SERVICE: service-student-lyza-preprod
 
 jobs:
   docker-tag-push:

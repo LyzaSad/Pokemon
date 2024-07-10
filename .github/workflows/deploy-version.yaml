@@ -1,48 +1,49 @@
-name: deploy app to environment
+name: Build, Push & Deploy Docker Image to Google Cloud (Dev)
+
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target environment"
-        default: prod
-        required: true 
-        options:
-          - preprod
-          - prod
-      version:
-        description: 'App version'
-        required: true
-env:
-  PROJECT_ID: pokedevops
-  APP_NAME: quelpoke
-  REGION: europe-west9
-  REGISTRY: student-yann
-  CLOUDRUN_SERVICE_PREFIX: service-student-yann
+  push:
+    branches:
+      - main
+    tags:
+      - 'preprod-*'
+
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: export registry domain
-        run: echo "REGISTRY_DOMAIN=${REGION}-docker.pkg.dev" >> $GITHUB_ENV
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: export image name env
-        run: echo "IMAGE_NAME=${REGISTRY_DOMAIN}/${PROJECT_ID}/${REGISTRY}/${APP_NAME}:${{ github.event.inputs.version }}" >> $GITHUB_ENV
-
-      - name: "gcloud auth"
-        uses: 'google-github-actions/auth@v2'
+      - name: Log in to Google Cloud
+        uses: google-github-actions/auth@v0
         with:
-          credentials_json: '${{ secrets.SERVICE_ACCOUNT_KEY }}'
+          credentials_json: '${{ secrets.POKEMON_SECRET }}'
 
-      - name: gcloud configure docker 
-        run: gcloud --quiet auth configure-docker ${REGION}-docker.pkg.dev
+      - name: Configure Docker for Google Cloud
+        run: gcloud auth configure-docker europe-west9-docker.pkg.dev
 
-      - name: check if image exists
-        run: docker pull ${IMAGE_NAME}
-
-      - name: gcloud run deploy
+      - name: Determine Image Tag
+        id: tag
         run: |
-          gcloud run deploy ${CLOUDRUN_SERVICE_PREFIX}-"${{ github.event.inputs.environment }}" \
-          --image=${IMAGE_NAME} \
-          --project=${PROJECT_ID} \
-          --region=${REGION} \
-          --set-env-vars=VERSION=${{ github.event.inputs.version }}
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          elif [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            TAG="${GITHUB_REF#refs/heads/}"
+          else
+            TAG="latest"
+          fi
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
+          echo "::set-output name=image_tag::${TAG}"
+
+      - name: Extract version tag
+        run: echo "REACT_APP_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+
+      - name: Build the Docker image
+        run: docker build -t europe-west9-docker.pkg.dev/pokedevops/student-darko/pokemon:${{ env.IMAGE_TAG }} .
+
+      - name: Push the Docker image
+        run: docker push europe-west9-docker.pkg.dev/pokedevops/student-darko/pokemon:${{ env.IMAGE_TAG }}
+        
+      - name: Deploy to Google Cloud Run
+        run: gcloud run deploy service-student-darko-dev --image=europe-west9-docker.pkg.dev/pokedevops/student-darko/pokemon:${{ env.IMAGE_TAG }} --project pokedevops --region europe-west9 --allow-unauthenticated
